@@ -297,6 +297,26 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
         return true;
     }
     
+    /**
+     * Removes node from DOM
+     * 
+     * Makes the removed entry the current
+     * DOMNode of this instance. 
+     * 
+     * @return  boolean
+     */
+    public function removeNode() {
+        $n = $this->getNode();
+        if ($n instanceof DOMNode && $n->parentNode instanceof DOMNode)  {
+             $old = $n->parentNode->removeChild($n);
+             if ($old instanceof DOMNode) {
+                return $this->loadDomElement($old);
+             }
+        }
+    	return false;
+    }
+    
+    
     
     /**
      * Create Util_Xml_XmlObject instance from DomElement
