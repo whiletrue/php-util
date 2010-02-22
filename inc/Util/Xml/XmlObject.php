@@ -67,10 +67,10 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     /**
      * Add child
      * 
-     * @see     Util_XmlObject::addChild()
+     * @see     Util_Xml_XmlObject::addChild()
      * @access  public
      */
-    public function add($name, $value, Util_XmlObject $sibling=null) {
+    public function add($name, $value, Util_Xml_XmlObject $sibling=null) {
         return $this->addChild($name, $value, $sibling);
     }
     
@@ -83,10 +83,10 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      *
      * @param   string    $name
      * @param   mixed     $value
-     * @return  Util_XmlObject
+     * @return  Util_Xml_XmlObject
      * @access  protected
      */
-    protected function addChild($name, $value, Util_XmlObject $sibling=null) {
+    protected function addChild($name, $value, Util_Xml_XmlObject $sibling=null) {
         $siblingNode = (null !== $sibling) ? $sibling->getNode() : null;
         $childNode = $this->addChildNode($name, $value, $siblingNode);
         $child = new self();
@@ -209,7 +209,7 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * 
      * @return  mixed
      * @access  public
-     * @alias   Util_XmlObject::getValue()
+     * @alias   Util_Xml_XmlObject::getValue()
      */
     public function value() {
         return $this->getValue();
@@ -299,10 +299,10 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     
     
     /**
-     * Create Util_XmlObject from DomElement
+     * Create Util_Xml_XmlObject instance from DomElement
      * 
      * @param   DOMElement  $element
-     * @return  Util_XmlObject
+     * @return  Util_Xml_XmlObject
      * @access  public
      * @static
      */
