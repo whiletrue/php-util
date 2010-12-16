@@ -165,6 +165,10 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
         }
     }
     
+    protected function resetXPath() {
+        return ($this->_xp = null);
+    }
+    
     
     protected function getXPath() {
         if ($this->hasNode()) {
@@ -182,7 +186,6 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @access  public
      */
     public function setValue($value) {
-        
         if (is_scalar($value) && $this->hasNode()) {
             $v = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE);
             $this->getNode()->nodeValue = $v;
@@ -294,13 +297,17 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     public function loadDomElement(DOMElement $element) {
         $this->setName($element->nodeName);
         $this->setNode($element);
+        $this->resetXPath();
         return true;
     }
     
     /**
      * Removes node from DOM
      * 
-     * Makes the removed entry the current
+     * Removes domnode of this instance if 
+     * a parent is available. The removed
+     * node becomes the current of this instance
+     * and could be reappended later. 
      * DOMNode of this instance. 
      * 
      * @return  boolean
