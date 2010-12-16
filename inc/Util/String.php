@@ -305,4 +305,9 @@ Class Util_String {
         return self::trim($out);
     }
     
+    
+    public static function validXml($input) {
+        return self::convertNamedEntities($input);
+    }
+    
 }
