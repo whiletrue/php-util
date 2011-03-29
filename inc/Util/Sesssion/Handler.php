@@ -7,7 +7,7 @@ Class Util_Session_Handler {
     
     protected $_store;
     
-    public function __construct($store, $name='PHPSESSION', $lifetime=null) {
+    public function __construct($store, $name='PHPSESSID', $lifetime=null) {
         $this->setStore($store);
         $this->setName($name);
         
@@ -126,7 +126,7 @@ Class Util_Session_Handler {
      * @param $maxlifetime
      */
     public function gc($maxlifetime) {
-        return $this->_store->_deleteExpired($maxlifetime);
+        return $this->_store->deleteExpired($maxlifetime);
     }
     
     
