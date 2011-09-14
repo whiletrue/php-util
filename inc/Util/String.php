@@ -316,6 +316,6 @@ Class Util_String {
     }
 
     public static function clearControlChars($input) {
-        return preg_replace("#[\x00-\x1F\x7F]#", " ", $input);
+        return preg_replace('#[\x00-\x1F\x7F]#', " ", $input);
     }
 }
