@@ -1,13 +1,16 @@
 <?php
 /**
  * Utility class that provides object oriented access
- * to a DOM xml structure.
+ * to a DOM XML structure.
  * 
  * @author <silvan@etoy.com>
  */
-class Util_Xml_XmlObject implements Countable, ArrayAccess {
+class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
     
-    protected $_node;
+    
+    protected $_nodes = array();
+    
+    protected $_key = 0;
     protected $_name;    
     protected $_xp;
     
@@ -43,16 +46,12 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * Method to add/update propertiy 
      */
     public function set($key, $value) {
-        $n = $this->get($key);
-        if ($n instanceof self) {
-            $n->setValue($value);
-            return $n;
-        } else if (null === $n) {
-            $child = $this->add($key, $value);
-            return $child;
+        $node = $this->get($key);
+        if ($node instanceof self && $node->getName() === $key) {
+            $node->setValue($value);
+            return $node;
         }
-        
-        return null;
+        return $this->add($key, $value);
     }
     
     
@@ -89,8 +88,13 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     protected function addChild($name, $value, Util_Xml_XmlObject $sibling=null) {
         $siblingNode = (null !== $sibling) ? $sibling->getNode() : null;
         $childNode = $this->addChildNode($name, $value, $siblingNode);
-        $child = new self();
-        $child->loadDomElement($childNode);
+        if (!$childNode instanceof DOMElement) {
+             return null;   
+        }
+        
+        $this->addNode($childNode);
+        $child = new self($childNode);
+        $child->setName($name);
         return $child;
     }
     
@@ -98,25 +102,30 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     /**
      * Append a new child node to the current
      * 
-     * 
+     * //FIXME: support non-scalar element values (arrays, objects)
      * @param $name
      * @param $value
      * @return DOMElement
      */
     protected function addChildNode($name, $value=null, DOMElement $sibling=null) {
-        if ($this->hasNode()) {
-            $node = $this->getNode();
-            $child = $node->ownerDocument->createElement($name);
-            if (null !== $value) {
-                $child->nodeValue = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE);
-            }
-            if (null === $sibling) {
-                $node->appendChild($child);
-            } else {
-                $node->insertBefore($child, $sibling->nextSibling);
-            }
-            return $child;
+         
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
         }
+        
+        $child = $node->ownerDocument->createElement($name);
+        if (is_scalar($value)) {
+            // FIXME: validation
+            $child->nodeValue = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE);
+        }
+        
+        if (null === $sibling) {
+            $node->appendChild($child);
+        } else {
+            $node->insertBefore($child, $sibling->nextSibling);
+        }
+        return $child;
     }
     
     
@@ -131,15 +140,12 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     public function get($key, $default=null) {
         $nl = $this->xpath($key);
         if ($nl instanceof DOMNodeList && $nl->length > 0) {
-            if ($nl->length === 1) {
-                return self::create($nl->item(0));
-            } else {
-                $obj = array();
-                foreach($nl as $node) {
-                    $obj[] = self::create($node);
-                }
-                return $obj;
+            $obj = self::create();
+            $obj->setName($key);
+            foreach($nl as $node) {
+                $obj->addNode($node);
             }
+            return $obj;
         }
         
         return new self();
@@ -154,15 +160,17 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     
     
     protected function xpath($xpath) {
-        if ($this->hasNode()) {
-            $xp = $this->getXPath();
-            if (null === $xp) {
-                return null;
-            }
-        
-            $nl = $xp->query($xpath, $this->_node);
-            return $nl;
+        $xp = $this->getXPath();
+        if (null === $xp) {
+            return null;
         }
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
+        }
+        $nl = $xp->query($xpath, $node);
+        return $nl;
+        
     }
     
     protected function resetXPath() {
@@ -171,13 +179,15 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     
     
     protected function getXPath() {
-        if ($this->hasNode()) {
-            if (!$this->_xp instanceof DOMXPath) {
-                $this->_xp = new DOMXPath($this->_node->ownerDocument);
-            }
+        if ($this->_xp instanceof DOMXPath) {
             return $this->_xp;
         }
-        return null;
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
+        }
+        $this->_xp = new DOMXPath($node->ownerDocument);
+        return $this->_xp;
     }
     
     /**
@@ -186,10 +196,16 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @access  public
      */
     public function setValue($value) {
-        if (is_scalar($value) && $this->hasNode()) {
-            $v = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE);
-            $this->getNode()->nodeValue = $v;
+        if (!is_scalar($value)) {
+            return false;
         }
+        $node = $this->getNode();
+        if (null === $node) {
+            return false;
+        }
+        
+        $v = htmlspecialchars($value, ENT_COMPAT, 'UTF-8', FALSE);
+        $node->nodeValue = $v;
         return true;
     }
     
@@ -200,10 +216,12 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @return  mixed
      */
     public function getValue() {
-        if ($this->hasNode()) {
-            return $this->getNode()->nodeValue;
-        } 
-        return null;
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
+        }
+        
+        return $node->nodeValue;
     }
     
     
@@ -224,9 +242,23 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * 
      */
     public function text() {
-        $v = $this->value();
-        if (is_scalar($v)) {
-            return $v;
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
+        }
+        
+        if (!$node->hasChildNodes()) {
+            return null;
+        }
+        $text = '';
+        $allowedTypes = array(XML_TEXT_NODE, XML_CDATA_SECTION_NODE);
+        foreach($node->childNodes as $child) {
+            if (in_array($child->nodeType, $allowedTypes)) {
+                $text.= $child->nodeValue;
+            }
+        }
+        if (!empty($text)) {
+            return $text;
         }
         return null;
     }
@@ -254,25 +286,48 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     }
     
     
-    public function setNode(DOMElement $node) {
-        return ($this->_node = $node);
+    public function addNode(DOMElement $node) {
+        return ($this->_nodes[] = $node);
     }
     
-    
-    public function getNode() {
-        return $this->_node;
+    public function setNode(DOMElement $node, $key) {
+        return ($this->_nodes[$key] = $node);
     }
-
+    
+    public function item($key) {
+        if ($this->hasItem($key)) {
+            $this->setKey($key);
+            return $this;
+        }
+        return null;
+    }
+    
+    public function hasItem($key) {
+        return (isset($this->_nodes[$key]));
+    }
     
     public function hasNode() {
-        return ($this->_node instanceof DOMElement);
+        return (sizeof($this->_nodes) > 0) ? true : false;
+    }
+    
+    public function getNode() {
+        $k = $this->key();
+        if (isset($this->_nodes[$k])) {
+            return $this->_nodes[$k];
+        }
+        return null;
     }
     
     
     public function getDomDocument() {
-        if ($this->hasNode()) {
-            return $this->getNode()->ownerDocument;
+        if (!$this->hasNode()) {
+            return null;
         }
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
+        }
+        return $node->ownerDocument;
     }
     
     
@@ -295,11 +350,9 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @return  boolean
      */
     public function loadDomElement(DOMElement $element) {
-        $this->setName($element->nodeName);
-        $this->setNode($element);
-        $this->resetXPath();
-        return true;
+        return $this->addNode($element);
     }
+    
     
     /**
      * Removes node from DOM
@@ -312,17 +365,15 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * 
      * @return  boolean
      */
-    public function removeNode() {
-        $n = $this->getNode();
-        if ($n instanceof DOMNode && $n->parentNode instanceof DOMNode)  {
-             $old = $n->parentNode->removeChild($n);
-             if ($old instanceof DOMNode) {
-                return $this->loadDomElement($old);
-             }
+    public function remove() {
+        $node = $this->getNode();
+        if (null === $node) {
+            return false;
         }
-    	return false;
+        
+        $old = $node->parentNode->removeChild($node);
+        return $this->setNode($old, $this->key());
     }
-    
     
     
     /**
@@ -333,42 +384,26 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @access  public
      * @static
      */
-    public static function create(DOMElement $element) {
+    public static function create(DOMElement $element=null) {
         $xmlo = new self($element);
         return $xmlo;
     }
     
     
     /**
-     * set Attribute
-     * 
-     * @param   string  $name
-     * @param   string  $value
-     * @access  public
-     * @return  boolean
-     */
-    public function setAttribute($name, $value) {
-        if ($this->hasNode()) {
-            return ($this->getNode()->setAttribute($name, $value));
-        }
-        return false;
-    }
-    
-    
-    /*
-     * checks if attribute exists
+     * Check if particular attribute exists
      * 
      * @param   string  $name
      * @return  boolean 
      * @access  public
      */
     public function hasAttribute($name) {
-        if ($this->hasNode()) {
-            return ($this->getNode()->hasAttribute($name));
+        $node = $this->getNode();
+        if (null === $node) {
+            return false;
         }
-        return false;
+        return $node->hasAttribute($name);
     }
-    
     
     /**
      * get Attribute
@@ -378,10 +413,11 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      * @access  public
      */
     public function getAttribute($name) {
-        if ($this->hasNode()) {
-            return ($this->getNode()->getAttribute($name));
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
         }
-        return null;
+        return $node->getAttribute($name);
     }
     
     /**
@@ -392,106 +428,152 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
      */
     public function getAttributes() {
         $attr = array();
-        if ($this->hasNode()) {
-            foreach($this->getNode()->attributes as $attrib) {
-                $attr[$attrib->name] = $attrib->value;
-            }
+        $node = $this->getNode();
+        if (null === $node) {
+            return $attr;
+        }
+        foreach($node->attributes as $attrib) {
+            $attr[$attrib->name] = $attrib->value;
         }
         return $attr;
     }
     
-    
     /**
-     * set attributes
+     * Set attributes
      * 
      * @param   array   $attributes
      * @access  public
      * @return  boolean
      */
     public function setAttributes(array $attributes) {
-        if ($this->hasNode()) {
-            $node = $this->getNode();
-            foreach($attributes as $name => $value) {
-                $node->setAttribute($name, $value);
-            }
-            return true;
+        $node = $this->getNode();
+        if (null === $node) {
+            return false;
         }
-        return false;
+        foreach($attributes as $name => $value) {
+            $node->setAttribute($name, $value);
+        }
+        return true;
     }
     
+	/**
+	 * Set Attribute
+     *
+     * @param   string  $name
+     * @param   string  $value
+     * @access  public
+     * @return  boolean
+     */
+    public function setAttribute($name, $value) {
+        $node = $this->getNode();
+        if (null === $node) {
+            return false;
+        }
+        return $node->setAttribute($name, $value);
+    }
     
     /**
-     * checks if attributes exist
+     * Check if node has attributes
      * 
      * @return boolean
      * @access public
      */
     public function hasAttributes() {
-        if ($this->hasNode()) {
-            return ($this->getNode()->hasAttributes());
+        $node = $this->getNode();
+        if (null === $node) {
+            return null;
         }
-        return false;
+        return $node->hasAttributes();
     }
     
-    
+    /**
+     * Serialize to xml string
+     * 
+	 * @return string
+     */
     public function toXml() {
         $doc = $this->getDomDocument();
-        if ($doc instanceof DOMDocument) {
-            return $doc->saveXML($this->getNode());
+        $node = $this->getNode();
+        if ($doc instanceof DOMDocument && $node instanceof DOMElement) {
+            return $doc->saveXML($node);
         }
     }
     
+    /**
+     * Iterator interface
+     * @see Iterator::key()
+     */
+    public function key() {
+        return $this->_key;
+    }
+    /**
+     * Iterator interface
+     * @see Iterator::current()
+     */
+    public function current() {
+        return $this;
+    }
+    /**
+     * Iterator interface
+     * @see Iterator::next()
+     */
+    public function next() {
+        $this->setKey($this->key() + 1);
+    }
+    /**
+     * Iterator interface
+     * @see Iterator::rewind()
+     */
+    public function rewind() {
+        $this->setKey(0);
+    }
+    /**
+     * Iterator interface
+     * @see Iterator::valid()
+     */
+    public function valid() {
+        return $this->hasItem($this->key());
+    }
+    /**
+     * Set iterator key
+     * @param int $key
+     */
+    public function setKey($key) {
+        return ($this->_key = $key);
+    }
     
     /**
-     * Countable interface method
-     * 
-     * @access  public
-     * @return  int
+     * Countable interface
+     * @see Countable::count()
      */
     public function count() {
-        $xp = "following-sibling::".$this->getName()."|preceding-sibling::".$this->getName();
-        $nl = $this->xpath($xp);
-        if ($nl instanceof DOMNodeList) {
-            return ($nl->length + 1);    
-        }
-        return 1;
+        return sizeof($this->_nodes);
     }
     
-    
     /**
-     * ArrayAccess interface method
-     * 
-     * @access  public
-     * @return  boolean
+     * ArrayAccess interface
+     * @see ArrayAccess::offsetSet()
      */
     public function offsetSet($key, $value) {
         return $this->set($key, $value);
     }
-    
     /**
-     * ArrayAccess  interface method
-     * 
-     * @access  public
-     * @return  boolean
+     * ArrayAccess interface
+     * @see ArrayAccess::offsetUnset()
      */
     public function offsetUnset($key) {
+        //FIXME:
     }
-    
     /**
-     * ArrayAccess interface method
-     * 
-     * @access  public
-     * @return  mixed
+     * ArrayAccess interface
+     * @see ArrayAccess::offsetGet()
      */
     public function offsetGet($key) {
         return $this->get($key);
     }
-    
     /**
-     * ArrayAccess interface method
-     * 
-     * @access  public
-     * @return  boolean
+     * ArrayAccess interface
+     * @see ArrayAccess::offsetExists()
      */
     public function offsetExists($key) {
         return ($this->__isset($key));
@@ -506,10 +588,5 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess {
     public function __toString() {
         return $this->getValue();
     }
-    
-    
-    
-    
-    
     
 }

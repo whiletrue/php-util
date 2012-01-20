@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="./bootstrap.php">   
+    <testsuite name="Util Test Suite">
+        <directory>./Util/</directory>
+    </testsuite>
+    <php>
+        <includePath>../inc</includePath>
+    </php>
+</phpunit>
