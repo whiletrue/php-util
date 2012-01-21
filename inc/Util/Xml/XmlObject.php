@@ -22,7 +22,7 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
      */
     public function __construct(DOMElement $element=null) {
         if (null !== $element) {
-            $this->loadDomElement($element); 
+            $this->loadDomElement($element);
         }
     }
     
@@ -33,7 +33,7 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
      */
     public function __isset($key) {
         if (is_int($key)) {
-            return $this->hasItem($key);
+            return $this->hasNode($key);
         }
         
         $nl = $this->xpath($key);
@@ -295,23 +295,21 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
     }
     
     public function item($key) {
-        if ($this->hasItem($key)) {
-            $this->setKey($key);
-            return $this;
+        if ($this->hasNode($key)) {
+            $obj = new self($this->getNode($key));
+            $obj->setName($this->getName());
+            return $obj;
         }
         return null;
     }
     
-    public function hasItem($key) {
-        return (isset($this->_nodes[$key]));
+    public function hasNode($key = null) {
+        $key = (null === $key) ? $this->key() : $key;
+        return isset($this->_nodes[$key]);
     }
     
-    public function hasNode() {
-        return (sizeof($this->_nodes) > 0) ? true : false;
-    }
-    
-    public function getNode() {
-        $k = $this->key();
+    public function getNode($key = null) {
+        $k = (null === $key) ? $this->key() : $key;
         if (isset($this->_nodes[$k])) {
             return $this->_nodes[$k];
         }
@@ -532,7 +530,7 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
      * @see Iterator::valid()
      */
     public function valid() {
-        return $this->hasItem($this->key());
+        return $this->hasNode($this->key());
     }
     /**
      * Set iterator key

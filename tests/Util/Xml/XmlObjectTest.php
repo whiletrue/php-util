@@ -208,6 +208,24 @@ Class XmlObjectTest extends Util_TestCase {
         $this->assertNull($node->item(1));
     }
     
+    public function testItem() {
+        $node = $this->_instance->sh->bt->entry;
+        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertEquals('entry', $node->getName());
+        $this->assertCount(3, $node);
+        
+        $ids = array('10208131', '10208132', '10208031');
+        for($i=0; $i<3; $i++) {
+            $items = array();
+            $items[0] = $node->item($i);
+            $items[1] = $node[$i];
+            foreach($items as $item) {
+                $this->assertInstanceof('Util_Xml_XmlObject', $item);
+                $this->assertEquals('entry', $item->getName());
+                $this->assertEquals($ids[$i], $item->bt_id);
+            }
+        }
+    }
     
     
 }
