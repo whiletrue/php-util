@@ -310,4 +310,12 @@ Class Util_String {
         return self::convertNamedEntities($input);
     }
     
+
+    public static function clearSpace($input) {
+        return preg_replace("#\s+#", " ", $input);
+    }
+
+    public static function clearControlChars($input) {
+        return preg_replace('#[\x00-\x1F\x7F]#', " ", $input);
+    }
 }
