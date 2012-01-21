@@ -5,7 +5,7 @@
  * 
  * @author <silvan@etoy.com>
  */
-class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
+class Util_XmlObject implements Countable, ArrayAccess, Iterator {
     
     protected $_nodes = array();
     

@@ -1,5 +1,5 @@
 <?php
-require_once 'Util/Xml/XmlObject.php';
+require_once 'Util/XmlObject.php';
 require_once 'Util/TestCase.php';
 
 Class XmlObjectTest extends Util_TestCase {
@@ -13,8 +13,8 @@ Class XmlObjectTest extends Util_TestCase {
     public function setUp() {
         $this->_fixture = $this->_getDomDataFixture('/util/xml/xmlobject.xml');
         $this->assertInstanceOf('DOMDocument', $this->_fixture);
-        $this->_instance = new Util_Xml_XmlObject($this->_fixture->documentElement);
-        $this->assertInstanceOf('Util_Xml_XmlObject', $this->_instance); 
+        $this->_instance = new Util_XmlObject($this->_fixture->documentElement);
+        $this->assertInstanceOf('Util_XmlObject', $this->_instance); 
     }    
     
     /**
@@ -37,7 +37,7 @@ Class XmlObjectTest extends Util_TestCase {
     public function testValue() {
         $v = '10208030';
         $node = $this->_instance->sh->sh_id;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals($v, $node->getValue());
         $this->assertEquals($v, (string) $node);
         $this->assertEquals($v, $node->value());
@@ -47,25 +47,25 @@ Class XmlObjectTest extends Util_TestCase {
     public function testValueText() {
         $v = '10208030';
         $node = $this->_instance->sh->sh_id;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals($v, $node->text());
     }
     
     public function testValueTextEmpty() {
         $node = $this->_instance->sh;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('', $node->text());
     }
     
     public function testValueTextCdata() {
         $node = $this->_instance->sh->sh_header;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('cdata section test', $node->text());
     }
     
     public function testSingleNode() {
        $node = $this->_instance->sh;
-       $this->assertInstanceof('Util_Xml_XmlObject', $node);
+       $this->assertInstanceof('Util_XmlObject', $node);
        $this->assertEquals('sh', $node->getName());
        $this->assertCount(1, $node);
     }
@@ -83,7 +83,7 @@ Class XmlObjectTest extends Util_TestCase {
     
     public function testNodeset() {
         $nodel = $this->_instance->sh->bt->entry;
-        $this->assertInstanceof('Util_Xml_XmlObject', $nodel);
+        $this->assertInstanceof('Util_XmlObject', $nodel);
         $this->assertEquals('entry', $nodel->getName());
         $this->assertCount(3, $nodel);
     }
@@ -103,32 +103,32 @@ Class XmlObjectTest extends Util_TestCase {
     
     public function testAdd() {
         $parent = $this->_instance->sh;
-        $this->assertInstanceof('Util_Xml_XmlObject', $parent);
+        $this->assertInstanceof('Util_XmlObject', $parent);
         
         $child = $parent->add('foo', 'bar');
-        $this->assertInstanceof('Util_Xml_XmlObject', $child);
+        $this->assertInstanceof('Util_XmlObject', $child);
         $this->assertEquals('foo', $child->getName());
         $this->assertEquals('bar', $child->getValue());
         $this->assertEquals('bar', $child->text());
         
         $child2 = $this->_instance->sh->foo;
-        $this->assertInstanceof('Util_Xml_XmlObject', $child);
+        $this->assertInstanceof('Util_XmlObject', $child);
     }
     
     public function testAddMagic() {
         $parent = $this->_instance->sh;
-        $this->assertInstanceof('Util_Xml_XmlObject', $parent);
+        $this->assertInstanceof('Util_XmlObject', $parent);
         $this->assertEquals('sh', $parent->getName());
         
         $parent->bar = 'foo';
         $child = $parent->bar;
-        $this->assertInstanceof('Util_Xml_XmlObject', $child);
+        $this->assertInstanceof('Util_XmlObject', $child);
         $this->assertEquals('bar', $child->getName());
         $this->assertEquals('foo', $child->getValue());
         $this->assertEquals('foo', $child->text());
         
         $child2 = $this->_instance->sh->bar;
-        $this->assertInstanceof('Util_Xml_XmlObject', $child2);
+        $this->assertInstanceof('Util_XmlObject', $child2);
         $this->assertEquals('bar', $child2->getName());
         $child2->setValue('new value');
         
@@ -139,7 +139,7 @@ Class XmlObjectTest extends Util_TestCase {
     
     public function testIterator() {
         $nl = $this->_instance->sh->bt->entry;
-        $this->assertInstanceof('Util_Xml_XmlObject', $nl);
+        $this->assertInstanceof('Util_XmlObject', $nl);
         $this->assertEquals('entry', $nl->getName());
         $this->assertCount(3, $nl);
         
@@ -170,38 +170,38 @@ Class XmlObjectTest extends Util_TestCase {
     
     public function testArrayAccessGet() {
         $node = $this->_instance->sh->bt;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $node2 = $node['entry'];
-        $this->assertInstanceof('Util_Xml_XmlObject', $node2);
+        $this->assertInstanceof('Util_XmlObject', $node2);
         $this->assertEquals('entry', $node2->getName());
         $this->assertCount(3, $node2);
     }
     
     public function testArrayAccessGetInt() {
         $node = $this->_instance->sh->bt->entry;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('entry', $node->getName());
         $node2 = $node[0];
-        $this->assertInstanceof('Util_Xml_XmlObject', $node2);
+        $this->assertInstanceof('Util_XmlObject', $node2);
         $this->assertEquals('entry', $node2->getName());
     }
     
     public function testArrayAccessSet() {
         $node = $this->_instance->sh;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('sh', $node->getName());
         
         $node['foo'] = 'bar';
-        $this->assertInstanceof('Util_Xml_XmlObject', $this->_instance->sh->foo);
+        $this->assertInstanceof('Util_XmlObject', $this->_instance->sh->foo);
         $this->assertEquals('foo', $this->_instance->sh->foo->getName());
         $this->assertEquals('bar', $this->_instance->sh->foo->getValue());
     }
     
     public function testArrayAccessSetInt() {
         $node = $this->_instance->sh;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('sh', $node->getName());
-        $this->assertInstanceof('Util_Xml_XmlObject', $node[0]);
+        $this->assertInstanceof('Util_XmlObject', $node[0]);
         $this->assertEquals('sh', $node[0]->getName());
         $this->assertCount(1, $node);
         $this->assertNull($node->offsetSet(1, 'foob'));
@@ -210,7 +210,7 @@ Class XmlObjectTest extends Util_TestCase {
     
     public function testItem() {
         $node = $this->_instance->sh->bt->entry;
-        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertInstanceof('Util_XmlObject', $node);
         $this->assertEquals('entry', $node->getName());
         $this->assertCount(3, $node);
         
@@ -220,7 +220,7 @@ Class XmlObjectTest extends Util_TestCase {
             $items[0] = $node->item($i);
             $items[1] = $node[$i];
             foreach($items as $item) {
-                $this->assertInstanceof('Util_Xml_XmlObject', $item);
+                $this->assertInstanceof('Util_XmlObject', $item);
                 $this->assertEquals('entry', $item->getName());
                 $this->assertEquals($ids[$i], $item->bt_id);
             }
