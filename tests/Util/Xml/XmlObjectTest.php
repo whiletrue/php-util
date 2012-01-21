@@ -157,6 +157,57 @@ Class XmlObjectTest extends Util_TestCase {
         $this->assertEquals(0, $nl->key());
     }
     
+    public function testIsset() {
+        $this->assertTrue(isset($this->_instance->sh));
+        $this->assertTrue(isset($this->_instance->sh->bt));
+        $this->assertTrue(isset($this->_instance->sh->bt->entry));
+        $this->assertTrue(isset($this->_instance->sh->bt->entry[0]));
+        $this->assertTrue(isset($this->_instance->sh->bt->entry[1]));
+        $this->assertTrue(isset($this->_instance->sh->bt->entry[2]));
+        $this->assertFalse(isset($this->_instance->sh->bt->entry[3]));
+        $this->assertFalse(isset($this->_instance->sh->foo));
+    }
+    
+    public function testArrayAccessGet() {
+        $node = $this->_instance->sh->bt;
+        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $node2 = $node['entry'];
+        $this->assertInstanceof('Util_Xml_XmlObject', $node2);
+        $this->assertEquals('entry', $node2->getName());
+        $this->assertCount(3, $node2);
+    }
+    
+    public function testArrayAccessGetInt() {
+        $node = $this->_instance->sh->bt->entry;
+        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertEquals('entry', $node->getName());
+        $node2 = $node[0];
+        $this->assertInstanceof('Util_Xml_XmlObject', $node2);
+        $this->assertEquals('entry', $node2->getName());
+    }
+    
+    public function testArrayAccessSet() {
+        $node = $this->_instance->sh;
+        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertEquals('sh', $node->getName());
+        
+        $node['foo'] = 'bar';
+        $this->assertInstanceof('Util_Xml_XmlObject', $this->_instance->sh->foo);
+        $this->assertEquals('foo', $this->_instance->sh->foo->getName());
+        $this->assertEquals('bar', $this->_instance->sh->foo->getValue());
+    }
+    
+    public function testArrayAccessSetInt() {
+        $node = $this->_instance->sh;
+        $this->assertInstanceof('Util_Xml_XmlObject', $node);
+        $this->assertEquals('sh', $node->getName());
+        $this->assertInstanceof('Util_Xml_XmlObject', $node[0]);
+        $this->assertEquals('sh', $node[0]->getName());
+        $this->assertCount(1, $node);
+        $this->assertNull($node->offsetSet(1, 'foob'));
+        $this->assertNull($node->item(1));
+    }
+    
     
     
 }

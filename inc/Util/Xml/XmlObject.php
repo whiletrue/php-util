@@ -7,7 +7,6 @@
  */
 class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
     
-    
     protected $_nodes = array();
     
     protected $_key = 0;
@@ -27,20 +26,22 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
         }
     }
     
-    
     /**
      * magic method for isset() / empty()
      * 
      * @param   string $key
      */
     public function __isset($key) {
+        if (is_int($key)) {
+            return $this->hasItem($key);
+        }
+        
         $nl = $this->xpath($key);
         if ($nl instanceof DOMNodeList && $nl->length > 0) {
             return true;
         }
         return false;
     }
-    
     
     /**
      * Method to add/update propertiy 
@@ -92,7 +93,6 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
              return null;   
         }
         
-        $this->addNode($childNode);
         $child = new self($childNode);
         $child->setName($name);
         return $child;
@@ -555,6 +555,13 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
      * @see ArrayAccess::offsetSet()
      */
     public function offsetSet($key, $value) {
+        if (is_int($key)) {
+            /* 
+             * don't allow setting/overwriting
+             * internal nodelist atm.
+             */
+            return null;
+        }
         return $this->set($key, $value);
     }
     /**
@@ -569,6 +576,9 @@ class Util_Xml_XmlObject implements Countable, ArrayAccess, Iterator {
      * @see ArrayAccess::offsetGet()
      */
     public function offsetGet($key) {
+        if (is_int($key)) {
+            return $this->item($key);
+        }
         return $this->get($key);
     }
     /**
