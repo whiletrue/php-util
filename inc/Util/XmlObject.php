@@ -129,6 +129,11 @@ class Util_XmlObject implements Countable, ArrayAccess, Iterator {
     }
     
     
+    public function getChildren() {
+        return $this->get('child::*');
+    }
+    
+    
     /**
      * Retrieve value according to key
      * 
@@ -296,8 +301,9 @@ class Util_XmlObject implements Countable, ArrayAccess, Iterator {
     
     public function item($key) {
         if ($this->hasNode($key)) {
-            $obj = new self($this->getNode($key));
-            $obj->setName($this->getName());
+            $node = $this->getNode($key);
+            $obj = new self($node);
+            $obj->setName($node->nodeName);
             return $obj;
         }
         return null;
@@ -509,7 +515,8 @@ class Util_XmlObject implements Countable, ArrayAccess, Iterator {
      * @see Iterator::current()
      */
     public function current() {
-        return $this;
+        //return $this;
+        return $this->item($this->key());
     }
     /**
      * Iterator interface

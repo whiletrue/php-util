@@ -137,6 +137,26 @@ Class XmlObjectTest extends Util_TestCase {
         $this->assertEquals('new value', $this->_instance->sh->bar->text());
     }
     
+    public function testIteratorChildren() {
+        $nl = $this->_instance->sh->assets;
+        $this->assertInstanceof('Util_XmlObject', $nl);
+        $childnames = array('audio','podcast','attachment','image','link');
+        foreach($nl->getChildren() as $i => $child) {
+            $this->assertEquals($childnames[$i], $child->getName());
+        }
+    }
+    
+    public function testIteratorNodename() {
+        $nl = $this->_instance->sh->bt->entry;
+        $this->assertInstanceof('Util_XmlObject', $nl);
+        $this->assertEquals('entry', $nl->getName());
+        $this->assertCount(3, $nl);
+        foreach($nl as $i => $node) {
+            $this->assertEquals('entry', $node->getName());
+        }
+        
+    }
+    
     public function testIterator() {
         $nl = $this->_instance->sh->bt->entry;
         $this->assertInstanceof('Util_XmlObject', $nl);
